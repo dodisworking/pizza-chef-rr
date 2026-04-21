@@ -97,7 +97,7 @@ app.post('/api/compare', async (req, res) => {
 
     emit('pc-progress', { stage: 'ding', percent: 95, message: 'DING! — plating the Excel report…' })
     const result = {
-      property: deriveProperty(parsedArgus.text) || deriveProperty(parsedClient.text) || null,
+      property: deriveProperty(parsedArgus) || deriveProperty(parsedClient) || null,
       argusTenantsTotal: argusTenants.length,
       clientTenantsTotal: clientTenants.length,
       argus: argusTenants,
@@ -121,23 +121,73 @@ app.post('/api/compare', async (req, res) => {
   }
 })
 
-function deriveProperty(text) {
-  if (!text) return null
+// Words/phrases that appear in Argus schema headers but are NOT property names.
+const ARGUS_NOISE = new Set([
+  'tenure','freehold','leasehold','base','contract','speculative','option',
+  'retail','office','anchor','jr anchor','large shop',
+  'rent details','general tenant information','cpi','free rent','% rent',
+  'miscellaneous rent','recovery','tenant improvements','leasing commissions',
+  'incentives','security deposits','renewal assumption','lease summary report',
+  'all tenants','all tenants/ base and option lease',
+  'tenant name','suite number','lease dates','lease term','initial area',
+  'building share %','lease status','market leasing','lease type',
+  'rate per year','amount per year','rate per month','amount per month','rental value per year',
+])
+
+function isArgusNoise(s) {
+  const lower = s.toLowerCase().trim()
+  if (ARGUS_NOISE.has(lower)) return true
+  if (/^as of\b/i.test(s)) return true
+  if (/^={2,}\s*sheet/i.test(s)) return true
+  return false
+}
+
+function deriveProperty(parsed) {
+  if (!parsed) return null
+
+  // Preferred path — use parsed sheets directly (XLSX). Property name is usually row 2.
+  if (parsed.sheets?.length) {
+    const ws = parsed.sheets.find(s => /lease summary|rent roll/i.test(s.rows.slice(0, 5).flat().join(' '))) || parsed.sheets[0]
+    for (let r = 0; r < Math.min(8, ws.rows.length); r++) {
+      const row = ws.rows[r] || []
+      for (const cell of row) {
+        const t = String(cell ?? '').trim()
+        if (!t) continue
+        if (t.length < 5 || t.length > 120) continue
+        if (isArgusNoise(t)) continue
+        if (/rent roll|tenant name|suite/i.test(t)) continue
+        // Split on ' - ' and pick the longest non-noise segment
+        // (handles "BRX UW - Northwood Plaza (2026.02.10)- BEFORE (Amounts...)")
+        const segments = t.split(/ - |- /).map(s => s.trim()).filter(Boolean)
+        let best = null
+        for (const seg of segments) {
+          if (seg.length < 5) continue
+          if (isArgusNoise(seg)) continue
+          if (/^\(.*\)$/.test(seg)) continue          // pure parenthetical
+          if (/before|after|amounts|measures|sf\)|usd/i.test(seg)) continue
+          // Strip trailing paren suffix: "Northwood Plaza (2026.02.10)" → "Northwood Plaza"
+          const cleaned = seg.replace(/\s*\(.*\)\s*$/, '').trim()
+          if (!cleaned) continue
+          if (!best || cleaned.length > best.length) best = cleaned
+        }
+        if (best) return best
+        return t
+      }
+    }
+  }
+
+  // Text fallback for PDFs.
+  const text = parsed.text || ''
   const lines = text.split('\n').slice(0, 40)
   for (const ln of lines) {
-    // Take only the first tab-delimited column (sheets often repeat value across columns)
     const t = String(ln).split('\t')[0].trim()
     if (!t) continue
     if (t.length < 5 || t.length > 80) continue
-    if (/^=+\s*sheet/i.test(t)) continue
-    if (/^lease summary report$/i.test(t)) continue
-    if (/^as of\b/i.test(t)) continue
-    if (/^all tenants/i.test(t)) continue
-    if (/rent details|general tenant|tenant name|suite number|lease dates|lease term|initial area|building share|recovery/i.test(t)) continue
+    if (isArgusNoise(t)) continue
+    if (/rent roll|tenant name|suite|lease dates|lease term|initial area|recovery/i.test(t)) continue
     if (/^\d|^suite|^tenant|^unit/i.test(t)) continue
     if (/property:/i.test(t)) return t.replace(/property:\s*/i, '').replace(/[,;].*$/, '').trim()
-    // Looks like a real property name
-    if (/[A-Z][a-z]/.test(t) && !/\|/.test(t)) return t
+    if (/[A-Z][a-z]/.test(t)) return t
   }
   return null
 }

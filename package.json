@@ -1,7 +1,7 @@
 {
   "name": "pizza-chef-rr",
   "version": "1.0.0",
-  "description": "Todd Jr's Pizzeria — Argus vs Client rent roll reconciliation",
+  "description": "Todd's Pizzeria — Rent Roll the Dough (Argus vs Client reconciliation)",
   "main": "server.js",
   "type": "module",
   "scripts": {
