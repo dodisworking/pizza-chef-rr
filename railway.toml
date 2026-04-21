@@ -1,0 +1,3 @@
+# https://docs.railway.com/reference/config-as-code
+[deploy]
+startCommand = "npm start"

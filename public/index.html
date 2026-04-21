@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Todd Jr's Pizzeria — Rent Roll Reconciliation</title>
+  <link rel="stylesheet" href="/chef.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E%F0%9F%8D%95%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <main class="app">
+
+    <!-- ═══ HEADER ══════════════════════════════════════════ -->
+    <header class="topbar">
+      <div class="logo">
+        <div class="chef-hat">🍕</div>
+        <div class="title">
+          <h1>Todd Jr's Pizzeria</h1>
+          <p class="subtitle">Argus × Client rent roll reconciliation — served hot &amp; kosher</p>
+        </div>
+      </div>
+      <div class="toggles">
+        <label class="opus-toggle">
+          <input type="checkbox" id="opusToggle">
+          <span>🔥 Extra cheese <small>(Opus 4.7)</small></span>
+        </label>
+      </div>
+    </header>
+
+    <!-- ═══ STAGE 1 — UPLOAD ═══════════════════════════════ -->
+    <section id="uploadStage" class="stage active">
+      <h2 class="stage-title">Load the dough</h2>
+      <p class="stage-sub">Drop in the <b>Argus</b> rent roll and the <b>Client</b> rent roll. PDF or XLSX — any combination.</p>
+
+      <div class="drop-grid">
+        <div class="drop-slot" id="slotA">
+          <div class="drop-inner">
+            <div class="drop-icon">🥣</div>
+            <div class="drop-label">File A</div>
+            <div class="drop-hint">Drop PDF or XLSX</div>
+            <input type="file" id="inputA" accept=".pdf,.xlsx,.xls">
+            <div class="drop-filename" id="nameA"></div>
+          </div>
+        </div>
+        <div class="drop-slot" id="slotB">
+          <div class="drop-inner">
+            <div class="drop-icon">🥣</div>
+            <div class="drop-label">File B</div>
+            <div class="drop-hint">Drop PDF or XLSX</div>
+            <input type="file" id="inputB" accept=".pdf,.xlsx,.xls">
+            <div class="drop-filename" id="nameB"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="detectBtn" class="btn primary" disabled>Identify the dough →</button>
+      </div>
+    </section>
+
+    <!-- ═══ STAGE 2 — CONFIRM ═══════════════════════════════ -->
+    <section id="confirmStage" class="stage">
+      <h2 class="stage-title">Confirm your ingredients</h2>
+      <p class="stage-sub">Todd Jr sniffed the files. Double-check before we roll.</p>
+
+      <div class="confirm-grid">
+        <div class="confirm-card argus" id="argusCard">
+          <div class="confirm-badge">ARGUS</div>
+          <div class="confirm-filename" id="argusFilename">—</div>
+          <div class="confirm-hits" id="argusHits"></div>
+        </div>
+        <button id="swapBtn" class="swap-btn" title="Swap">⇄</button>
+        <div class="confirm-card client" id="clientCard">
+          <div class="confirm-badge">CLIENT</div>
+          <div class="confirm-filename" id="clientFilename">—</div>
+          <div class="confirm-hits" id="clientHits"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="backToUpload" class="btn ghost">← Back</button>
+        <button id="rollBtn" class="btn primary big">🍕 Roll the dough</button>
+      </div>
+    </section>
+
+    <!-- ═══ STAGE 3 — BAKING ════════════════════════════════ -->
+    <section id="bakingStage" class="stage">
+      <h2 class="stage-title" id="bakingHeadline">Rolling the dough…</h2>
+
+      <div class="pizza-stage">
+        <div class="chef" id="chefSprite">
+          <div class="chef-face">
+            <div class="chef-hat-big">👨‍🍳</div>
+          </div>
+        </div>
+
+        <div class="pizza" id="pizzaSprite">
+          <div class="layer base" data-stage="dough"></div>
+          <div class="layer sauce" data-stage="sauce"></div>
+          <div class="layer cheese" data-stage="toppings"></div>
+          <div class="layer toppings" data-stage="toppings2">
+            <span class="veg olive">·</span>
+            <span class="veg olive">·</span>
+            <span class="veg olive">·</span>
+            <span class="veg pepper">▲</span>
+            <span class="veg pepper">▲</span>
+            <span class="veg mushroom">◉</span>
+            <span class="veg mushroom">◉</span>
+          </div>
+          <div class="oven" id="oven">
+            <div class="oven-front"></div>
+            <div class="oven-glow"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-shell">
+        <div class="progress-stage" id="progressStage">Kneading dough</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-message" id="progressMessage">Warming the stone…</div>
+      </div>
+    </section>
+
+    <!-- ═══ STAGE 4 — RESULTS ═══════════════════════════════ -->
+    <section id="resultStage" class="stage">
+      <div class="ding">🔔 DING! 🔔</div>
+      <h2 class="stage-title">Your pizza is ready.</h2>
+      <p class="stage-sub" id="resultSub">Reconciliation complete.</p>
+
+      <div class="stats" id="statsGrid"></div>
+
+      <div class="actions">
+        <button id="downloadBtn" class="btn primary big">⬇ Download Excel report</button>
+        <button id="restartBtn" class="btn ghost">Start a new order</button>
+      </div>
+
+      <div class="preview">
+        <h3>Top discrepancies</h3>
+        <div id="previewTable" class="preview-table"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>🍕 Kosher pizzeria — no meat in this oven.</span>
+      <span id="health">·</span>
+    </footer>
+  </main>
+
+  <script src="/chef.js"></script>
+</body>
+</html>

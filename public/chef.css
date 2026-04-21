@@ -1,0 +1,284 @@
+/* ═══════════════════════════════════════════════════════════
+   Todd Jr's Pizzeria — rent roll chef
+   Apple-smooth surface, 8-bit pizza sprite in the middle.
+   ═══════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(180deg, #fef3e6 0%, #fff7ed 40%, #ffffff 100%);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 120px;
+  min-height: 100vh;
+}
+
+/* ─── Topbar ──────────────────────────────────────────── */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 36px;
+}
+.logo { display: flex; gap: 14px; align-items: center; }
+.chef-hat {
+  font-size: 42px; line-height: 1;
+  background: radial-gradient(circle at 30% 30%, #fff, #fde68a 70%, #f59e0b);
+  border-radius: 50%; width: 62px; height: 62px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 20px rgba(180, 83, 9, .2), 0 1px 2px rgba(0,0,0,.06);
+}
+.title h1 {
+  font-size: 22px; font-weight: 700; margin: 0;
+  background: linear-gradient(90deg, #b91c1c, #f97316 60%, #ea580c);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  letter-spacing: -0.01em;
+}
+.subtitle { margin: 2px 0 0; font-size: 13px; color: #6b7280; }
+
+.opus-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 999px;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.opus-toggle input { accent-color: #ea580c; }
+.opus-toggle small { color: #9ca3af; }
+
+/* ─── Stages ──────────────────────────────────────────── */
+.stage { display: none; animation: fadeIn .35s ease-out; }
+.stage.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.stage-title {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 6px; color: #111827;
+}
+.stage-sub { margin: 0 0 28px; color: #6b7280; font-size: 15px; }
+
+/* ─── Drop zones ──────────────────────────────────────── */
+.drop-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  margin-bottom: 28px;
+}
+.drop-slot {
+  position: relative;
+  background: #fff;
+  border: 2px dashed #fbbf24;
+  border-radius: 22px;
+  padding: 44px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, .12);
+}
+.drop-slot:hover { border-color: #f59e0b; background: #fffbeb; }
+.drop-slot.dragover { border-color: #ea580c; background: #fff7ed; transform: scale(1.01); }
+.drop-slot.filled { border-style: solid; border-color: #10b981; background: #f0fdf4; box-shadow: 0 4px 14px rgba(16, 185, 129, .18); }
+
+.drop-slot input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.drop-icon { font-size: 42px; margin-bottom: 6px; }
+.drop-label { font-size: 18px; font-weight: 600; color: #111827; }
+.drop-hint { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+.drop-filename {
+  margin-top: 10px; font-size: 13px; font-weight: 500; color: #047857;
+  word-break: break-all;
+}
+
+/* ─── Actions / buttons ───────────────────────────────── */
+.actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+.btn {
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  border: 0; border-radius: 999px; padding: 12px 22px;
+  cursor: pointer; transition: all .15s ease;
+}
+.btn.primary {
+  background: linear-gradient(180deg, #f97316, #ea580c);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, .35), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.btn.primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(234, 88, 12, .45); }
+.btn.primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn.ghost { background: #fff; color: #374151; border: 1px solid #e5e7eb; }
+.btn.ghost:hover { background: #f9fafb; }
+.btn.big { font-size: 17px; padding: 14px 30px; }
+
+/* ─── Confirm stage ───────────────────────────────────── */
+.confirm-grid {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px;
+  align-items: center; margin-bottom: 28px;
+}
+.confirm-card {
+  background: #fff; border-radius: 18px; padding: 24px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.confirm-card.argus { border-color: #1e3a5f; }
+.confirm-card.client { border-color: #065f46; }
+.confirm-badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  padding: 4px 10px; border-radius: 999px; margin-bottom: 12px;
+  background: #1e3a5f; color: #fff;
+}
+.confirm-card.client .confirm-badge { background: #065f46; }
+.confirm-filename { font-size: 16px; font-weight: 600; color: #111827; word-break: break-all; margin-bottom: 8px; }
+.confirm-hits { font-size: 12px; color: #6b7280; line-height: 1.6; font-family: ui-monospace, monospace; }
+.swap-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid #e5e7eb; background: #fff; font-size: 20px;
+  cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.06);
+}
+.swap-btn:hover { background: #fff7ed; border-color: #ea580c; }
+
+/* ─── Pizza bake stage ────────────────────────────────── */
+.pizza-stage {
+  position: relative; height: 340px;
+  margin: 8px auto 24px;
+  display: flex; justify-content: center; align-items: flex-end;
+  background: repeating-linear-gradient(45deg, #fde68a 0 8px, #fcd34d 8px 16px);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(180, 83, 9, .25);
+  image-rendering: pixelated;
+}
+.chef {
+  position: absolute; left: 28px; bottom: 28px;
+  font-size: 72px;
+  animation: chef-bob 1.2s ease-in-out infinite;
+}
+@keyframes chef-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.pizza {
+  position: relative; width: 220px; height: 220px;
+  margin-right: 48px; margin-bottom: 40px;
+}
+.layer {
+  position: absolute; inset: 0; border-radius: 50%;
+  opacity: 0; transform: scale(.6);
+  transition: all .6s cubic-bezier(.2,.8,.2,1);
+}
+.layer.base    { background: radial-gradient(circle at 50% 45%, #fde68a 40%, #d97706 90%); box-shadow: inset 0 -6px 12px rgba(124, 45, 18, .4); }
+.layer.sauce   { background: radial-gradient(circle, #b91c1c 0%, #991b1b 70%, transparent 72%); inset: 12px; }
+.layer.cheese  { background: radial-gradient(ellipse at 30% 40%, #fef9c3 0%, #facc15 60%, transparent 62%); inset: 16px; mix-blend-mode: screen; }
+.layer.toppings {
+  inset: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 14px; font-size: 24px; font-weight: 900; color: #111827;
+}
+.layer.toppings .veg { display: inline-block; }
+.layer.toppings .olive   { color: #111827; }
+.layer.toppings .pepper  { color: #047857; }
+.layer.toppings .mushroom{ color: #92400e; }
+
+.pizza.stage-dough    .layer.base    { opacity: 1; transform: scale(1); animation: dough-knead 1.2s ease-in-out infinite; }
+.pizza.stage-roll     .layer.base    { opacity: 1; transform: scale(1); animation: dough-spin 2s linear infinite; }
+.pizza.stage-sauce    .layer.base    { opacity: 1; transform: scale(1); }
+.pizza.stage-sauce    .layer.sauce   { opacity: 1; transform: scale(1); }
+.pizza.stage-toppings .layer.base, .pizza.stage-toppings .layer.sauce { opacity: 1; transform: scale(1); }
+.pizza.stage-toppings .layer.cheese  { opacity: 1; transform: scale(1); }
+.pizza.stage-toppings .layer.toppings{ opacity: 1; transform: scale(1); }
+.pizza.stage-oven     .layer          { opacity: 1; transform: scale(1); }
+.pizza.stage-oven                     { animation: oven-rock 1.4s ease-in-out infinite; }
+.pizza.stage-ding     .layer          { opacity: 1; transform: scale(1); animation: pizza-pop .6s ease-out; }
+
+@keyframes dough-knead { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04) rotate(-1.5deg); } }
+@keyframes dough-spin  { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes oven-rock   { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(2deg); } }
+@keyframes pizza-pop   { 0% { transform: scale(.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+.oven {
+  position: absolute; inset: -20px; border-radius: 50%;
+  pointer-events: none; opacity: 0; transition: opacity .4s ease;
+}
+.pizza.stage-oven .oven { opacity: 1; }
+.oven-glow {
+  position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 80px 40px rgba(249, 115, 22, .55), inset 0 0 40px rgba(239, 68, 68, .4);
+  animation: oven-glow 1.4s ease-in-out infinite;
+}
+@keyframes oven-glow {
+  0%,100% { box-shadow: 0 0 60px 30px rgba(249, 115, 22, .4), inset 0 0 30px rgba(239, 68, 68, .4); }
+  50%     { box-shadow: 0 0 90px 50px rgba(249, 115, 22, .7), inset 0 0 50px rgba(239, 68, 68, .6); }
+}
+
+/* ─── Progress ────────────────────────────────────────── */
+.progress-shell { max-width: 680px; margin: 0 auto; }
+.progress-stage {
+  font-size: 15px; font-weight: 600; color: #111827;
+  margin-bottom: 8px; text-align: center;
+}
+.progress-bar {
+  height: 12px; background: #fff7ed; border-radius: 999px; overflow: hidden;
+  border: 1px solid #fed7aa; box-shadow: inset 0 1px 2px rgba(0,0,0,.04);
+}
+.progress-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, #fbbf24, #f97316, #ea580c);
+  border-radius: 999px;
+  transition: width .4s ease;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+}
+.progress-message { text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; }
+
+/* ─── Results ─────────────────────────────────────────── */
+.ding {
+  text-align: center; font-size: 32px; letter-spacing: .25em;
+  font-weight: 800; color: #b91c1c;
+  animation: ding-wiggle .8s ease-out;
+}
+@keyframes ding-wiggle { 0% { transform: scale(.6); } 50% { transform: scale(1.2) rotate(-4deg); } 100% { transform: scale(1); } }
+
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin: 24px 0 28px;
+}
+.stat-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+  padding: 18px; text-align: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.stat-card .n { font-size: 28px; font-weight: 700; color: #111827; line-height: 1; }
+.stat-card .l { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.stat-card.hl-red   { border-color: #fecaca; background: #fef2f2; }
+.stat-card.hl-red   .n { color: #b91c1c; }
+.stat-card.hl-green { border-color: #bbf7d0; background: #f0fdf4; }
+.stat-card.hl-green .n { color: #047857; }
+.stat-card.hl-orange{ border-color: #fed7aa; background: #fff7ed; }
+.stat-card.hl-orange .n { color: #c2410c; }
+
+.preview { margin-top: 28px; }
+.preview h3 { margin: 0 0 10px; font-size: 16px; color: #111827; }
+.preview-table {
+  border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden;
+  background: #fff;
+}
+.preview-row {
+  display: grid; grid-template-columns: 80px 1fr 1fr 1fr 90px;
+  gap: 0; padding: 10px 14px;
+  border-bottom: 1px solid #f3f4f6; font-size: 13px;
+}
+.preview-row.hdr { background: #f9fafb; font-weight: 600; color: #6b7280; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.preview-row:last-child { border-bottom: none; }
+.preview-row .sev { font-size: 11px; font-weight: 700; }
+.preview-row.HIGH .sev { color: #b91c1c; }
+.preview-row.MEDIUM .sev { color: #c2410c; }
+.preview-row.LOW .sev { color: #92400e; }
+
+.footer {
+  display: flex; justify-content: space-between;
+  margin-top: 60px; padding-top: 18px; border-top: 1px dashed #fcd34d;
+  font-size: 12px; color: #9ca3af;
+}
+
+@media (max-width: 680px) {
+  .drop-grid, .confirm-grid { grid-template-columns: 1fr; }
+  .swap-btn { justify-self: center; }
+}
