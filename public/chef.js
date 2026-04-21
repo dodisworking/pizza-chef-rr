@@ -104,12 +104,21 @@ $('#swapBtn').addEventListener('click', () => {
 $('#backToUpload').addEventListener('click', () => showStage('uploadStage'))
 
 // ── Bake ─────────────────────────────────────────────────
+let bakeAbort = null
+let bakeStartedAt = 0
+let lastProgressAt = 0
+let elapsedTimer = null
+let stallTimer = null
+const STALL_TIMEOUT_MS = 180000  // if no new progress event in 3min, assume stuck
+
 $('#rollBtn').addEventListener('click', async () => {
   state.useOpus = $('#opusToggle').checked
   showStage('bakingStage')
-  setPizzaStage('dough')
+  setKitchenStage('dough')
   updateProgress({ stage: 'dough', percent: 3, message: 'Warming the stone…' })
+  startBakeTimers()
 
+  bakeAbort = new AbortController()
   try {
     const [argusB64, clientB64] = await Promise.all([toBase64(state.argusFile), toBase64(state.clientFile)])
     const resp = await fetch('/api/compare', {
@@ -120,14 +129,58 @@ $('#rollBtn').addEventListener('click', async () => {
         client: { name: state.clientFile.name, base64: clientB64 },
         useOpus: state.useOpus,
       }),
+      signal: bakeAbort.signal,
     })
     if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`)
     await consumeSSE(resp.body)
   } catch (e) {
-    alert('Baking failed: ' + e.message)
-    showStage('uploadStage')
+    if (e.name === 'AbortError') {
+      // User cancelled or stall-timeout fired — already handled
+    } else {
+      alert('Baking failed: ' + e.message)
+      resetBake()
+      showStage('uploadStage')
+    }
+  } finally {
+    stopBakeTimers()
   }
 })
+
+$('#cancelBtn').addEventListener('click', () => {
+  if (!bakeAbort) return
+  const elapsed = Math.round((Date.now() - bakeStartedAt) / 1000)
+  if (elapsed > 60 && !confirm(`The pizza has been in the oven for ${elapsed}s. Stop anyway?`)) return
+  bakeAbort.abort()
+  stopBakeTimers()
+  resetBake()
+  showStage('uploadStage')
+})
+
+function startBakeTimers() {
+  bakeStartedAt = lastProgressAt = Date.now()
+  elapsedTimer = setInterval(() => {
+    const s = Math.round((Date.now() - bakeStartedAt) / 1000)
+    const el = $('#progressElapsed')
+    if (el) el.textContent = `${s}s elapsed${s > 120 ? ' · dense files take up to 2 min' : ''}`
+  }, 1000)
+  stallTimer = setInterval(() => {
+    if (Date.now() - lastProgressAt > STALL_TIMEOUT_MS) {
+      bakeAbort?.abort()
+      stopBakeTimers()
+      alert('The kitchen stalled — no progress in 3 minutes. Try again or use a smaller file.')
+      resetBake()
+      showStage('uploadStage')
+    }
+  }, 5000)
+}
+function stopBakeTimers() {
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null }
+  if (stallTimer) { clearInterval(stallTimer); stallTimer = null }
+}
+function resetBake() {
+  bakeAbort = null
+  bakeStartedAt = lastProgressAt = 0
+}
 
 async function consumeSSE(stream) {
   const reader = stream.getReader()
@@ -148,9 +201,9 @@ async function consumeSSE(stream) {
       }
       if (!data) continue
       let payload; try { payload = JSON.parse(data) } catch { continue }
-      if (event === 'pc-progress') updateProgress(payload)
-      else if (event === 'pc-complete') onComplete(payload)
-      else if (event === 'pc-error') { alert('Kitchen error: ' + payload.error); showStage('uploadStage'); return }
+      if (event === 'pc-progress') { lastProgressAt = Date.now(); updateProgress(payload) }
+      else if (event === 'pc-complete') { lastProgressAt = Date.now(); onComplete(payload) }
+      else if (event === 'pc-error') { alert('Kitchen error: ' + payload.error); stopBakeTimers(); resetBake(); showStage('uploadStage'); return }
     }
   }
 }

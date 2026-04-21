@@ -381,6 +381,7 @@ svg[shape-rendering="crispEdges"] { image-rendering: pixelated; }
   transition: width .4s ease;
 }
 .progress-message { text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; }
+.progress-elapsed { text-align: center; margin-top: 4px; font-size: 11px; color: #9ca3af; font-variant-numeric: tabular-nums; }
 
 /* ─── Results ─────────────────────────────────────────── */
 .ding {
