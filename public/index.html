@@ -293,20 +293,72 @@
 
     <!-- ═══ STAGE 4 — RESULTS ═══════════════════════════════ -->
     <section id="resultStage" class="stage">
-      <div class="ding pixel">🔔 DING! 🔔</div>
-      <h2 class="stage-title">Pizza's ready.</h2>
-      <p class="stage-sub" id="resultSub">Reconciliation complete.</p>
-
-      <div class="stats" id="statsGrid"></div>
-
-      <div class="actions">
-        <button id="downloadBtn" class="btn primary big">⬇ Download Excel report</button>
-        <button id="restartBtn" class="btn ghost">Start a new order</button>
+      <div class="result-header">
+        <div class="ding pixel">🔔 DING! 🔔</div>
+        <h2 class="stage-title">Pizza's ready. Apples to Apples.</h2>
+        <p class="stage-sub" id="resultSub">Reconciliation complete.</p>
+        <div class="stats" id="statsGrid"></div>
+        <div class="actions">
+          <button id="downloadBtn" class="btn primary big">⬇ Download Excel (with your reviews)</button>
+          <button id="restartBtn" class="btn ghost">Start a new order</button>
+        </div>
       </div>
 
-      <div class="preview">
-        <h3>Top discrepancies</h3>
-        <div id="previewTable" class="preview-table"></div>
+      <!-- ─── THREE PANEL REVIEWER ──────────────────────────── -->
+      <div class="reviewer">
+        <div class="panel panel-apple">
+          <div class="panel-head">
+            <div class="panel-title"><span class="fruit">🍎</span> Apple <small>Argus</small></div>
+            <input class="panel-search" id="appleSearch" placeholder="Filter tenants…">
+          </div>
+          <div class="panel-body" id="applePanel"></div>
+        </div>
+
+        <div class="panel panel-pear">
+          <div class="panel-head">
+            <div class="panel-title"><span class="fruit">🍐</span> Pear <small>Client (normalized)</small></div>
+            <input class="panel-search" id="pearSearch" placeholder="Filter tenants…">
+          </div>
+          <div class="panel-body" id="pearPanel"></div>
+        </div>
+
+        <div class="panel panel-a2a">
+          <div class="panel-head">
+            <div class="panel-title"><span class="fruit">🍕</span> Apples to Apples <small>reconciliation</small></div>
+            <div class="filter-chips" id="filterChips">
+              <button class="chip active" data-filter="all">All</button>
+              <button class="chip" data-filter="diffs">Differences</button>
+              <button class="chip" data-filter="argusOnly">Argus only</button>
+              <button class="chip" data-filter="clientOnly">Client only</button>
+              <button class="chip" data-filter="unreviewed">Unreviewed</button>
+            </div>
+          </div>
+          <div class="panel-body" id="a2aPanel"></div>
+        </div>
+      </div>
+
+      <!-- ─── DETAIL DRAWER (slide-up modal for click-in review) ─ -->
+      <div class="drawer" id="reviewDrawer" aria-hidden="true">
+        <div class="drawer-scrim" id="drawerScrim"></div>
+        <div class="drawer-panel">
+          <div class="drawer-head">
+            <div class="drawer-title" id="drawerTitle">Suite —</div>
+            <button class="drawer-close" id="drawerClose" aria-label="Close">✕</button>
+          </div>
+          <div class="drawer-body" id="drawerBody"></div>
+          <div class="drawer-foot">
+            <div class="review-buttons">
+              <button class="btn-review good"    data-verdict="good">👍 Real discrepancy</button>
+              <button class="btn-review bad"     data-verdict="bad">👎 False positive</button>
+              <button class="btn-review clear"   data-verdict="none">↺ Clear</button>
+            </div>
+            <textarea id="reviewNote" class="review-note" placeholder="Optional note (pulled into your Excel export)…"></textarea>
+            <div class="drawer-nav">
+              <button class="btn ghost" id="drawerPrev">← Prev</button>
+              <button class="btn ghost" id="drawerNext">Next →</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

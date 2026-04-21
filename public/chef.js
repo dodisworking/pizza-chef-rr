@@ -274,7 +274,14 @@ function onComplete(payload) {
   } catch {}
 }
 
-// ── Results ──────────────────────────────────────────────
+// ── Results / Reviewer ───────────────────────────────────
+//
+// state.reviews[key] = { verdict: 'good' | 'bad' | null, note: string }
+// key = tenant group index in result.tenantGroups
+state.reviews = {}
+state.currentFilter = 'all'
+state.activeGroupIdx = -1
+
 function renderResults() {
   const r = state.result || {}
   const s = r.summary || {}
@@ -291,29 +298,295 @@ function renderResults() {
     `<div class="stat-card ${x.cls || ''}"><div class="n">${x.n}</div><div class="l">${x.l}</div></div>`
   ).join('')
 
-  const groups = (r.tenantGroups || []).filter(g => !g.allMatch).slice(0, 10)
-  const rows = [`<div class="preview-row hdr"><div>Suite</div><div>Tenant</div><div>Argus</div><div>Client</div><div>Severity</div></div>`]
-  for (const g of groups) {
-    const d = (g.differences || [])[0]
-    const sev = d?.severity || (g.argusOnly || g.clientOnly ? 'HIGH' : 'LOW')
-    const tenant = g.argus?.name || g.client?.name || '—'
-    const argusV = g.argusOnly ? '— (missing)' : (d ? d.argusValue : 'match')
-    const clientV = g.clientOnly ? '— (missing)' : (d ? d.clientValue : 'match')
-    rows.push(`<div class="preview-row ${sev}"><div>${escape(g.suite || '—')}</div><div>${escape(tenant)}</div><div>${escape(argusV)}</div><div>${escape(clientV)}</div><div class="sev">${sev}</div></div>`)
-  }
-  if (groups.length === 0) rows.push(`<div class="preview-row"><div>🎉</div><div>Every tenant matched. The oven is clean.</div><div></div><div></div><div></div></div>`)
-  $('#previewTable').innerHTML = rows.join('')
+  renderPanels()
+  wireReviewer()
 }
 
-$('#downloadBtn').addEventListener('click', () => {
-  if (!state.excelBase64) return
-  const blob = base64ToBlob(state.excelBase64, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+function renderPanels() {
+  const r = state.result || {}
+  renderApplePanel(r.argus || [])
+  renderPearPanel(r.client || [])
+  renderA2APanel(r.tenantGroups || [])
+}
+
+function renderApplePanel(argusList) {
+  const host = $('#applePanel')
+  const q = ($('#appleSearch').value || '').toLowerCase()
+  host.innerHTML = argusList
+    .filter(t => !q || (t.name || '').toLowerCase().includes(q) || String(t.suite || '').toLowerCase().includes(q))
+    .map(t => `
+      <div class="tenant-row" data-side="apple" data-suite="${escape(t.suiteNormalized || t.suite || '')}">
+        <div class="suite">${escape(t.suite || '—')}</div>
+        <div class="name" title="${escape(t.name || '')}">${escape(t.name || '—')}</div>
+        <div class="sf">${t.sqft != null ? Number(t.sqft).toLocaleString() : '—'}</div>
+      </div>`).join('') || '<div style="padding:14px;color:#9ca3af;font-size:12px">(no tenants)</div>'
+}
+
+function renderPearPanel(clientList) {
+  const host = $('#pearPanel')
+  const q = ($('#pearSearch').value || '').toLowerCase()
+  host.innerHTML = clientList
+    .filter(t => !q || (t.name || '').toLowerCase().includes(q) || String(t.suite || '').toLowerCase().includes(q))
+    .map(t => `
+      <div class="tenant-row" data-side="pear" data-suite="${escape(t.suiteNormalized || t.suite || '')}">
+        <div class="suite">${escape(t.suite || '—')}</div>
+        <div class="name" title="${escape(t.name || '')}">${escape(t.name || '—')}</div>
+        <div class="sf">${t.sqft != null ? Number(t.sqft).toLocaleString() : '—'}</div>
+      </div>`).join('') || '<div style="padding:14px;color:#9ca3af;font-size:12px">(no tenants)</div>'
+}
+
+function a2aStatus(g) {
+  if (g.argusOnly) return 'argusOnly'
+  if (g.clientOnly) return 'clientOnly'
+  if (g.allMatch)   return 'match'
+  return 'diffs'
+}
+
+function renderA2APanel(groups) {
+  const host = $('#a2aPanel')
+  const filter = state.currentFilter
+  const rows = groups.map((g, idx) => ({ g, idx }))
+    .filter(({ g, idx }) => {
+      const st = a2aStatus(g)
+      if (filter === 'all') return true
+      if (filter === 'diffs')      return st === 'diffs'
+      if (filter === 'argusOnly')  return st === 'argusOnly'
+      if (filter === 'clientOnly') return st === 'clientOnly'
+      if (filter === 'unreviewed') return (st !== 'match') && !state.reviews[idx]?.verdict
+      return true
+    })
+    .map(({ g, idx }) => {
+      const st = a2aStatus(g)
+      const tenant = g.argus?.name || g.client?.name || '—'
+      const statusIcon = st === 'match' ? '✓' : st === 'diffs' ? '✗' : '!'
+      const v = state.reviews[idx]?.verdict
+      const verdictIcon = v === 'good' ? '👍' : v === 'bad' ? '👎' : (st === 'match' ? '' : '•')
+      return `
+        <div class="a2a-row status-${st} ${state.activeGroupIdx === idx ? 'selected' : ''}"
+             data-idx="${idx}" data-suite="${escape(g.suiteNormalized || g.suite || '')}">
+          <div class="a2a-suite">${escape(g.suite || '—')}</div>
+          <div class="a2a-tenant" title="${escape(tenant)}">${escape(tenant)}</div>
+          <div class="a2a-status">${statusIcon}</div>
+          <div class="a2a-verdict">${verdictIcon}</div>
+        </div>`
+    }).join('')
+  host.innerHTML = rows || '<div style="padding:14px;color:#9ca3af;font-size:12px">(no rows for this filter)</div>'
+}
+
+function wireReviewer() {
+  // Filter chips
+  document.querySelectorAll('#filterChips .chip').forEach(c => {
+    c.onclick = () => {
+      document.querySelectorAll('#filterChips .chip').forEach(x => x.classList.remove('active'))
+      c.classList.add('active')
+      state.currentFilter = c.dataset.filter
+      renderA2APanel(state.result.tenantGroups || [])
+    }
+  })
+
+  // Search boxes
+  $('#appleSearch').oninput = () => renderApplePanel(state.result.argus || [])
+  $('#pearSearch').oninput  = () => renderPearPanel(state.result.client || [])
+
+  // Click on any a2a row → open drawer + highlight panels
+  $('#a2aPanel').onclick = (e) => {
+    const row = e.target.closest('.a2a-row')
+    if (!row) return
+    const idx = parseInt(row.dataset.idx, 10)
+    openDrawer(idx)
+  }
+
+  // Click tenant in apple/pear → open drawer if there's a matching a2a row
+  $('#applePanel').onclick = $('#pearPanel').onclick = (e) => {
+    const row = e.target.closest('.tenant-row')
+    if (!row) return
+    const suite = row.dataset.suite
+    const groups = state.result.tenantGroups || []
+    const idx = groups.findIndex(g => (g.suiteNormalized || g.suite) === suite)
+    if (idx >= 0) openDrawer(idx)
+  }
+
+  // Drawer controls
+  $('#drawerScrim').onclick = $('#drawerClose').onclick = closeDrawer
+  $('#drawerPrev').onclick = () => navDrawer(-1)
+  $('#drawerNext').onclick = () => navDrawer(+1)
+  document.querySelectorAll('.btn-review').forEach(b => {
+    b.onclick = () => setVerdict(b.dataset.verdict === 'none' ? null : b.dataset.verdict)
+  })
+  $('#reviewNote').oninput = (e) => {
+    if (state.activeGroupIdx < 0) return
+    const r = state.reviews[state.activeGroupIdx] || { verdict: null, note: '' }
+    r.note = e.target.value
+    state.reviews[state.activeGroupIdx] = r
+  }
+  document.addEventListener('keydown', handleDrawerKey)
+}
+
+function handleDrawerKey(e) {
+  if ($('#reviewDrawer').getAttribute('aria-hidden') !== 'false') return
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return
+  if (e.key === 'Escape')      closeDrawer()
+  else if (e.key === 'j' || e.key === 'ArrowDown') navDrawer(+1)
+  else if (e.key === 'k' || e.key === 'ArrowUp')   navDrawer(-1)
+  else if (e.key === 'g') setVerdict('good')
+  else if (e.key === 'b') setVerdict('bad')
+}
+
+function openDrawer(idx) {
+  state.activeGroupIdx = idx
+  const g = (state.result.tenantGroups || [])[idx]
+  if (!g) return
+  const review = state.reviews[idx] || { verdict: null, note: '' }
+
+  // Highlight panels
+  highlightPanels(g.suiteNormalized || g.suite)
+  // Mark selected in a2a panel
+  document.querySelectorAll('.a2a-row').forEach(r => r.classList.toggle('selected', parseInt(r.dataset.idx,10) === idx))
+
+  $('#drawerTitle').innerHTML = `Suite <b>${escape(g.suite || '—')}</b> · ${escape(g.argus?.name || g.client?.name || '—')}`
+  $('#drawerBody').innerHTML = renderDrawerBody(g)
+
+  // Verdict buttons state
+  document.querySelectorAll('.btn-review').forEach(b => {
+    b.classList.toggle('active', b.dataset.verdict === review.verdict)
+  })
+  $('#reviewNote').value = review.note || ''
+
+  $('#reviewDrawer').setAttribute('aria-hidden', 'false')
+}
+
+function closeDrawer() {
+  $('#reviewDrawer').setAttribute('aria-hidden', 'true')
+  // Re-render a2a so verdict icons update
+  renderA2APanel(state.result.tenantGroups || [])
+}
+
+function navDrawer(delta) {
+  const groups = state.result.tenantGroups || []
+  let idx = state.activeGroupIdx
+  for (let i = 0; i < groups.length; i++) {
+    idx = (idx + delta + groups.length) % groups.length
+    // Skip clean matches by default if nav-ing
+    if (!groups[idx].allMatch) break
+  }
+  openDrawer(idx)
+}
+
+function setVerdict(verdict) {
+  if (state.activeGroupIdx < 0) return
+  const r = state.reviews[state.activeGroupIdx] || { verdict: null, note: '' }
+  r.verdict = verdict
+  state.reviews[state.activeGroupIdx] = r
+  document.querySelectorAll('.btn-review').forEach(b => {
+    b.classList.toggle('active', b.dataset.verdict === verdict)
+  })
+}
+
+function highlightPanels(suiteKey) {
+  for (const side of ['apple', 'pear']) {
+    const host = $('#' + side + 'Panel')
+    const rows = host.querySelectorAll('.tenant-row')
+    let hit = null
+    rows.forEach(r => {
+      const match = r.dataset.suite === suiteKey
+      r.classList.toggle('highlighted', match)
+      r.classList.toggle('dim', !match && !!suiteKey)
+      if (match) hit = r
+    })
+    if (hit) hit.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+}
+
+function renderDrawerBody(g) {
+  const a = g.argus, c = g.client
+  const diffs = g.differences || []
+  const flagged = new Set(diffs.map(d => d.field))
+
+  const field = (label, key, v, isFlagged) => `
+    <div class="field-row ${isFlagged ? 'flagged' : ''}">
+      <div class="label">${label}</div>
+      <div class="value">${escape(v ?? '—')}</div>
+    </div>`
+
+  const sideCard = (who, t) => {
+    if (!t) return `<div class="evidence-card ${who}"><div class="side-label">${who === 'apple' ? '🍎 Apple · Argus' : '🍐 Pear · Client'}</div><div style="color:#9ca3af;font-size:12px">Not present in this rent roll</div></div>`
+    const monthly = t.monthlyRent ?? (t.annualRent ? t.annualRent / 12 : null)
+    const psf = t.psfMonthly ?? (t.psfAnnual ? t.psfAnnual / 12 : null)
+    return `
+      <div class="evidence-card ${who}">
+        <div class="side-label">${who === 'apple' ? '🍎 Apple · Argus' : '🍐 Pear · Client'}</div>
+        ${field('Tenant', 'tenant_name', t.name, flagged.has('tenant_name'))}
+        ${field('Suite', 'suite', t.suite, false)}
+        ${field('SF', 'sqft', t.sqft != null ? Number(t.sqft).toLocaleString() : null, flagged.has('sqft'))}
+        ${field('Lease Start', 'lease_start', t.leaseStart, flagged.has('lease_start'))}
+        ${field('Lease End', 'lease_end', t.leaseEnd, flagged.has('lease_end'))}
+        ${field('Monthly Rent', 'monthly_rent', monthly != null ? '$' + Number(monthly).toLocaleString(undefined,{maximumFractionDigits:0}) : null, flagged.has('monthly_rent'))}
+        ${field('$/SF/Mo', 'psf_monthly', psf != null ? '$' + Number(psf).toFixed(2) : null, flagged.has('psf_monthly'))}
+        ${field('Steps', 'rent_steps', (t.rentSteps || []).length + ' step(s)', flagged.has('rent_steps_count') || flagged.has('rent_step_date') || flagged.has('rent_step_amount'))}
+      </div>`
+  }
+
+  const diffList = diffs.length ? `
+    <ul class="diff-list">
+      ${diffs.map(d => `
+        <li class="sev-${d.severity || 'LOW'}">
+          <span class="diff-sev">${d.severity || 'LOW'}</span>
+          <div class="diff-label">${escape(d.label || d.field)}</div>
+          <div class="diff-values">Argus: <b>${escape(d.argusValue)}</b> · Client: <b>${escape(d.clientValue)}</b></div>
+        </li>`).join('')}
+    </ul>` : `<div style="color:#6b7280;font-size:13px;margin-bottom:16px">No field-level differences — Todd thinks this is a clean match.</div>`
+
+  const status = g.argusOnly ? '<div style="padding:10px;background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;margin-bottom:14px;font-size:13px;color:#9a3412">This tenant is in Argus but <b>not found</b> in the client rent roll.</div>'
+               : g.clientOnly ? '<div style="padding:10px;background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;margin-bottom:14px;font-size:13px;color:#9a3412">This tenant is in the client rent roll but <b>not found</b> in Argus.</div>'
+               : ''
+
+  return `
+    ${status}
+    ${diffList}
+    <div class="evidence-grid">
+      ${sideCard('apple', a)}
+      ${sideCard('pear', c)}
+    </div>
+  `
+}
+
+$('#downloadBtn').addEventListener('click', async () => {
+  const btn = $('#downloadBtn')
+  const originalText = btn.textContent
+  const hasReviews = Object.values(state.reviews || {}).some(r => r?.verdict || r?.note)
+
+  try {
+    // If user has left reviews, ask server to regenerate Excel with them embedded.
+    // Otherwise download the pre-generated Excel that came with the bake.
+    if (hasReviews) {
+      btn.disabled = true; btn.textContent = '📝 Adding your reviews…'
+      const resp = await fetch('/api/download-with-reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ result: state.result, reviews: state.reviews }),
+      })
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`)
+      const data = await resp.json()
+      saveXlsxFromBase64(data.excelBase64, data.excelFilename || state.excelFilename)
+    } else {
+      if (!state.excelBase64) return
+      saveXlsxFromBase64(state.excelBase64, state.excelFilename)
+    }
+  } catch (e) {
+    alert('Download failed: ' + e.message)
+  } finally {
+    btn.disabled = false; btn.textContent = originalText
+  }
+})
+
+function saveXlsxFromBase64(b64, filename) {
+  const blob = base64ToBlob(b64, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = state.excelFilename || 'rent-roll-reconciliation.xlsx'
+  a.href = url; a.download = filename || 'rent-roll-reconciliation.xlsx'
   document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 2000)
-})
+}
 
 $('#restartBtn').addEventListener('click', () => {
   for (const key of ['fileA','fileB','argusFile','clientFile']) state[key] = null

@@ -23,6 +23,31 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'pizza-chef-rr' }))
 
 /**
+ * POST /api/download-with-reviews
+ * Body: { result: <the same result the client received>, reviews: { [groupIdx]: { verdict, note } } }
+ * Regenerates the Excel with a new "Your Review" + "Your Note" column on the Reconciliation sheet.
+ */
+app.post('/api/download-with-reviews', async (req, res) => {
+  try {
+    const { result, reviews } = req.body || {}
+    if (!result) return res.status(400).json({ error: 'result required' })
+    // Attach reviews into each group so buildExcel can render them
+    for (let i = 0; i < (result.tenantGroups || []).length; i++) {
+      const r = reviews?.[i]
+      if (r) result.tenantGroups[i].review = { verdict: r.verdict || null, note: r.note || '' }
+    }
+    const buf = await buildExcel(result)
+    res.json({
+      excelBase64: buf.toString('base64'),
+      excelFilename: `RentRoll-Reconciliation-reviewed-${Date.now()}.xlsx`,
+    })
+  } catch (e) {
+    console.error('download-with-reviews error:', e)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+/**
  * POST /api/detect
  * Body: { fileA: { name, base64 }, fileB: { name, base64 } }
  * Returns which file looks like Argus vs Client so the UI can confirm with the user.
