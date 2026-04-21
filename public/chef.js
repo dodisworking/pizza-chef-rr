@@ -112,7 +112,7 @@ let stallTimer = null
 const STALL_TIMEOUT_MS = 180000  // if no new progress event in 3min, assume stuck
 
 $('#rollBtn').addEventListener('click', async () => {
-  state.useOpus = $('#opusToggle').checked
+  state.mode = document.querySelector('input[name=mode]:checked')?.value || 'regular'
   showStage('bakingStage')
   setKitchenStage('dough')
   updateProgress({ stage: 'dough', percent: 3, message: 'Warming the stone…' })
@@ -127,7 +127,7 @@ $('#rollBtn').addEventListener('click', async () => {
       body: JSON.stringify({
         argus:  { name: state.argusFile.name,  base64: argusB64  },
         client: { name: state.clientFile.name, base64: clientB64 },
-        useOpus: state.useOpus,
+        mode: state.mode,
       }),
       signal: bakeAbort.signal,
     })

@@ -47,14 +47,26 @@ svg[shape-rendering="crispEdges"] { image-rendering: pixelated; }
 }
 .subtitle { margin: 2px 0 0; font-size: 13px; color: #6b7280; }
 
-.opus-toggle {
-  display: inline-flex; align-items: center; gap: 8px;
+.pizza-size {
+  display: inline-flex; align-items: stretch; gap: 2px;
   background: #fff; border: 1px solid #e5e7eb; border-radius: 999px;
-  padding: 8px 14px; font-size: 13px; cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  padding: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
 }
-.opus-toggle input { accent-color: #ea580c; }
-.opus-toggle small { color: #9ca3af; }
+.pizza-size .size-opt {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 8px 14px; border-radius: 999px; font-size: 13px;
+  transition: background .15s ease;
+  white-space: nowrap;
+}
+.pizza-size .size-opt:hover { background: #fff7ed; }
+.pizza-size .size-opt:has(input:checked) { background: #fed7aa; color: #9a3412; }
+.pizza-size .size-opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+.pizza-size .size-opt small { color: #9ca3af; font-size: 11px; }
+.pizza-size .size-opt:has(input:checked) small { color: #c2410c; }
+@media (max-width: 680px) {
+  .pizza-size { flex-direction: column; border-radius: 14px; }
+  .pizza-size .size-opt { justify-content: flex-start; border-radius: 10px; }
+}
 
 /* ─── Stages ──────────────────────────────────────────── */
 .stage { display: none; animation: fadeIn .35s ease-out; }

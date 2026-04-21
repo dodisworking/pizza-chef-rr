@@ -23,10 +23,20 @@
         </div>
       </div>
       <div class="toggles">
-        <label class="opus-toggle">
-          <input type="checkbox" id="opusToggle">
-          <span>🧀 Extra cheese <small>(Opus 4.7)</small></span>
-        </label>
+        <div class="pizza-size" role="radiogroup" aria-label="Pizza size">
+          <label class="size-opt">
+            <input type="radio" name="mode" value="dumb">
+            <span>🥔 <b>Dumb</b> <small>Haiku · cheapest</small></span>
+          </label>
+          <label class="size-opt active">
+            <input type="radio" name="mode" value="regular" checked>
+            <span>🍕 <b>Regular</b> <small>Sonnet · default</small></span>
+          </label>
+          <label class="size-opt">
+            <input type="radio" name="mode" value="deluxe">
+            <span>🧀 <b>Deluxe</b> <small>Opus · best</small></span>
+          </label>
+        </div>
       </div>
     </header>
 

@@ -71,9 +71,16 @@ app.post('/api/compare', async (req, res) => {
   const heartbeat = setInterval(() => res.write(': ping\n\n'), 15000)
 
   try {
-    const { argus, client, useOpus } = req.body || {}
+    const { argus, client, mode, useOpus } = req.body || {}
     if (!argus?.base64 || !client?.base64) throw new Error('argus and client files required')
-    const model = useOpus ? 'claude-opus-4-7' : 'claude-sonnet-4-6'
+    // mode: 'dumb' (Haiku, cheapest) | 'regular' (Sonnet, default) | 'deluxe' (Opus, best)
+    // Back-compat: legacy `useOpus: true` still maps to deluxe.
+    const effectiveMode = useOpus ? 'deluxe' : (mode || 'regular')
+    const model =
+      effectiveMode === 'dumb'   ? 'claude-haiku-4-5'   :
+      effectiveMode === 'deluxe' ? 'claude-opus-4-7'    :
+                                   'claude-sonnet-4-6'
+    console.log(`[compare] mode=${effectiveMode} model=${model} argus=${argus.name} client=${client.name}`)
 
     emit('pc-progress', { stage: 'dough', percent: 5, message: 'Kneading the dough — loading Argus rent roll…' })
     const argusBuf = Buffer.from(argus.base64, 'base64')
