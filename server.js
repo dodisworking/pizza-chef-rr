@@ -123,13 +123,21 @@ app.post('/api/compare', async (req, res) => {
 
 function deriveProperty(text) {
   if (!text) return null
-  const lines = text.split('\n').slice(0, 30)
+  const lines = text.split('\n').slice(0, 40)
   for (const ln of lines) {
-    const t = ln.trim()
+    // Take only the first tab-delimited column (sheets often repeat value across columns)
+    const t = String(ln).split('\t')[0].trim()
     if (!t) continue
-    if (/rent roll|tenant|suite|lease/i.test(t)) continue
-    if (/^as of/i.test(t)) continue
-    if (t.length > 4 && t.length < 100 && /[a-zA-Z]/.test(t) && !/^\d/.test(t)) return t.replace(/\s*\|\s*.*$/, '').trim()
+    if (t.length < 5 || t.length > 80) continue
+    if (/^=+\s*sheet/i.test(t)) continue
+    if (/^lease summary report$/i.test(t)) continue
+    if (/^as of\b/i.test(t)) continue
+    if (/^all tenants/i.test(t)) continue
+    if (/rent details|general tenant|tenant name|suite number|lease dates|lease term|initial area|building share|recovery/i.test(t)) continue
+    if (/^\d|^suite|^tenant|^unit/i.test(t)) continue
+    if (/property:/i.test(t)) return t.replace(/property:\s*/i, '').replace(/[,;].*$/, '').trim()
+    // Looks like a real property name
+    if (/[A-Z][a-z]/.test(t) && !/\|/.test(t)) return t
   }
   return null
 }

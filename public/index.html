@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Todd Jr's Pizzeria — Rent Roll Reconciliation</title>
   <link rel="stylesheet" href="/chef.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='28'%3E%F0%9F%8D%95%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -16,37 +19,80 @@
         <div class="chef-hat">🍕</div>
         <div class="title">
           <h1>Todd Jr's Pizzeria</h1>
-          <p class="subtitle">Argus × Client rent roll reconciliation — served hot &amp; kosher</p>
+          <p class="subtitle">Rent roll reconciliation · vegetarian · kosher · served bit by bit</p>
         </div>
       </div>
       <div class="toggles">
         <label class="opus-toggle">
           <input type="checkbox" id="opusToggle">
-          <span>🔥 Extra cheese <small>(Opus 4.7)</small></span>
+          <span>🧀 Extra cheese <small>(Opus 4.7)</small></span>
         </label>
       </div>
     </header>
 
     <!-- ═══ STAGE 1 — UPLOAD ═══════════════════════════════ -->
     <section id="uploadStage" class="stage active">
-      <h2 class="stage-title">Load the dough</h2>
-      <p class="stage-sub">Drop in the <b>Argus</b> rent roll and the <b>Client</b> rent roll. PDF or XLSX — any combination.</p>
+      <h2 class="stage-title">Place your ingredients</h2>
+      <p class="stage-sub">Drop your two rent rolls on the counter — <b>Asparagus</b> (Argus) and <b>Cilantro</b> (Client). Todd Jr will sniff which is which. PDF or XLSX, any combo.</p>
 
       <div class="drop-grid">
-        <div class="drop-slot" id="slotA">
+        <div class="drop-slot slot-argus" id="slotA">
           <div class="drop-inner">
-            <div class="drop-icon">🥣</div>
-            <div class="drop-label">File A</div>
-            <div class="drop-hint">Drop PDF or XLSX</div>
+            <div class="veg-art veg-argus">
+              <!-- 32-bit asparagus sprite -->
+              <svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true">
+                <!-- stalk -->
+                <rect x="14" y="6"  width="4" height="2" fill="#52c41a"/>
+                <rect x="13" y="8"  width="6" height="2" fill="#52c41a"/>
+                <rect x="14" y="10" width="4" height="2" fill="#73d13d"/>
+                <rect x="14" y="12" width="4" height="2" fill="#73d13d"/>
+                <rect x="14" y="14" width="4" height="2" fill="#95de64"/>
+                <rect x="14" y="16" width="4" height="2" fill="#95de64"/>
+                <rect x="14" y="18" width="4" height="2" fill="#b7eb8f"/>
+                <rect x="14" y="20" width="4" height="2" fill="#b7eb8f"/>
+                <rect x="14" y="22" width="4" height="2" fill="#95de64"/>
+                <rect x="13" y="24" width="6" height="2" fill="#689f38"/>
+                <!-- tip highlights -->
+                <rect x="12" y="9"  width="2" height="1" fill="#95de64"/>
+                <rect x="18" y="9"  width="2" height="1" fill="#95de64"/>
+                <rect x="12" y="13" width="2" height="1" fill="#b7eb8f"/>
+                <rect x="18" y="13" width="2" height="1" fill="#b7eb8f"/>
+                <rect x="12" y="17" width="2" height="1" fill="#d9f7be"/>
+                <rect x="18" y="17" width="2" height="1" fill="#d9f7be"/>
+              </svg>
+            </div>
+            <div class="drop-label">Asparagus <span class="alias">(Argus)</span></div>
+            <div class="drop-hint">or Cilantro — we'll figure it out</div>
             <input type="file" id="inputA" accept=".pdf,.xlsx,.xls">
             <div class="drop-filename" id="nameA"></div>
           </div>
         </div>
-        <div class="drop-slot" id="slotB">
+        <div class="drop-slot slot-client" id="slotB">
           <div class="drop-inner">
-            <div class="drop-icon">🥣</div>
-            <div class="drop-label">File B</div>
-            <div class="drop-hint">Drop PDF or XLSX</div>
+            <div class="veg-art veg-client">
+              <!-- 32-bit cilantro sprite -->
+              <svg viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true">
+                <!-- stem -->
+                <rect x="15" y="20" width="2" height="10" fill="#389e0d"/>
+                <!-- leaves (5 clusters) -->
+                <rect x="12" y="8"  width="3" height="3" fill="#52c41a"/>
+                <rect x="17" y="8"  width="3" height="3" fill="#52c41a"/>
+                <rect x="10" y="11" width="4" height="3" fill="#73d13d"/>
+                <rect x="18" y="11" width="4" height="3" fill="#73d13d"/>
+                <rect x="14" y="12" width="4" height="3" fill="#95de64"/>
+                <rect x="8"  y="14" width="4" height="3" fill="#73d13d"/>
+                <rect x="20" y="14" width="4" height="3" fill="#73d13d"/>
+                <rect x="13" y="15" width="6" height="3" fill="#95de64"/>
+                <rect x="11" y="17" width="4" height="2" fill="#52c41a"/>
+                <rect x="17" y="17" width="4" height="2" fill="#52c41a"/>
+                <!-- highlights -->
+                <rect x="13" y="9"  width="1" height="1" fill="#b7eb8f"/>
+                <rect x="18" y="9"  width="1" height="1" fill="#b7eb8f"/>
+                <rect x="15" y="13" width="2" height="1" fill="#d9f7be"/>
+              </svg>
+            </div>
+            <div class="drop-label">Cilantro <span class="alias">(Client)</span></div>
+            <div class="drop-hint">or Asparagus — we'll figure it out</div>
             <input type="file" id="inputB" accept=".pdf,.xlsx,.xls">
             <div class="drop-filename" id="nameB"></div>
           </div>
@@ -54,24 +100,24 @@
       </div>
 
       <div class="actions">
-        <button id="detectBtn" class="btn primary" disabled>Identify the dough →</button>
+        <button id="detectBtn" class="btn primary" disabled>Sort the ingredients →</button>
       </div>
     </section>
 
     <!-- ═══ STAGE 2 — CONFIRM ═══════════════════════════════ -->
     <section id="confirmStage" class="stage">
-      <h2 class="stage-title">Confirm your ingredients</h2>
-      <p class="stage-sub">Todd Jr sniffed the files. Double-check before we roll.</p>
+      <h2 class="stage-title">Ingredient check</h2>
+      <p class="stage-sub">Todd Jr thinks he found the asparagus and the cilantro. Swap if he got it wrong.</p>
 
       <div class="confirm-grid">
         <div class="confirm-card argus" id="argusCard">
-          <div class="confirm-badge">ARGUS</div>
+          <div class="confirm-badge">🥬 ASPARAGUS · ARGUS</div>
           <div class="confirm-filename" id="argusFilename">—</div>
           <div class="confirm-hits" id="argusHits"></div>
         </div>
         <button id="swapBtn" class="swap-btn" title="Swap">⇄</button>
         <div class="confirm-card client" id="clientCard">
-          <div class="confirm-badge">CLIENT</div>
+          <div class="confirm-badge">🌿 CILANTRO · CLIENT</div>
           <div class="confirm-filename" id="clientFilename">—</div>
           <div class="confirm-hits" id="clientHits"></div>
         </div>
@@ -85,37 +131,123 @@
 
     <!-- ═══ STAGE 3 — BAKING ════════════════════════════════ -->
     <section id="bakingStage" class="stage">
-      <h2 class="stage-title" id="bakingHeadline">Rolling the dough…</h2>
+      <h2 class="stage-title pixel" id="bakingHeadline">ROLLING THE DOUGH…</h2>
 
-      <div class="pizza-stage">
-        <div class="chef" id="chefSprite">
-          <div class="chef-face">
-            <div class="chef-hat-big">👨‍🍳</div>
-          </div>
+      <div class="kitchen" id="kitchen">
+        <!-- Parallax background tiles -->
+        <div class="kitchen-bg"></div>
+
+        <!-- Chef sprite: 4 frames, animated via CSS background-position-like transform -->
+        <div class="chef-sprite" id="chefSprite">
+          <svg viewBox="0 0 32 40" shape-rendering="crispEdges" aria-hidden="true">
+            <!-- hat -->
+            <rect x="9"  y="2"  width="14" height="2" fill="#fff"/>
+            <rect x="7"  y="4"  width="18" height="2" fill="#fff"/>
+            <rect x="6"  y="6"  width="20" height="4" fill="#fff"/>
+            <rect x="7"  y="10" width="18" height="1" fill="#e5e7eb"/>
+            <!-- face -->
+            <rect x="10" y="11" width="12" height="6" fill="#fcd9b6"/>
+            <rect x="11" y="13" width="1"  height="2" fill="#111"/>
+            <rect x="20" y="13" width="1"  height="2" fill="#111"/>
+            <rect x="13" y="15" width="6"  height="1" fill="#e67e22"/><!-- mustache -->
+            <rect x="14" y="16" width="4"  height="1" fill="#111"/><!-- smile -->
+            <!-- neckerchief -->
+            <rect x="11" y="17" width="10" height="1" fill="#dc2626"/>
+            <rect x="10" y="18" width="12" height="1" fill="#dc2626"/>
+            <!-- jacket -->
+            <rect x="9"  y="19" width="14" height="9" fill="#fff"/>
+            <rect x="15" y="20" width="2"  height="7" fill="#e5e7eb"/><!-- button row -->
+            <rect x="14" y="22" width="1"  height="1" fill="#fbbf24"/>
+            <rect x="14" y="25" width="1"  height="1" fill="#fbbf24"/>
+            <!-- left arm (animates) -->
+            <rect class="arm left" x="6" y="20" width="3" height="6" fill="#fff"/>
+            <rect class="hand left" x="5" y="25" width="3" height="3" fill="#fcd9b6"/>
+            <!-- right arm (animates) -->
+            <rect class="arm right" x="23" y="20" width="3" height="6" fill="#fff"/>
+            <rect class="hand right" x="24" y="25" width="3" height="3" fill="#fcd9b6"/>
+            <!-- pants -->
+            <rect x="10" y="28" width="5"  height="6" fill="#1e3a5f"/>
+            <rect x="17" y="28" width="5"  height="6" fill="#1e3a5f"/>
+            <!-- shoes -->
+            <rect x="9"  y="34" width="7"  height="2" fill="#111"/>
+            <rect x="16" y="34" width="7"  height="2" fill="#111"/>
+          </svg>
         </div>
 
-        <div class="pizza" id="pizzaSprite">
-          <div class="layer base" data-stage="dough"></div>
-          <div class="layer sauce" data-stage="sauce"></div>
-          <div class="layer cheese" data-stage="toppings"></div>
-          <div class="layer toppings" data-stage="toppings2">
-            <span class="veg olive">·</span>
-            <span class="veg olive">·</span>
-            <span class="veg olive">·</span>
-            <span class="veg pepper">▲</span>
-            <span class="veg pepper">▲</span>
-            <span class="veg mushroom">◉</span>
-            <span class="veg mushroom">◉</span>
+        <!-- Counter / pizza peel -->
+        <div class="counter"></div>
+
+        <!-- Pizza / dough with stage-driven layers -->
+        <div class="pizza-wrap" id="pizzaWrap">
+          <!-- spinning dough — shows in stage 'roll' -->
+          <div class="pizza" id="pizzaSprite">
+            <svg viewBox="0 0 64 64" shape-rendering="crispEdges" class="pizza-svg">
+              <!-- crust (outer ring) -->
+              <circle cx="32" cy="32" r="30" fill="#d97706"/>
+              <circle cx="32" cy="32" r="27" fill="#fde68a"/>
+              <!-- dough highlights -->
+              <rect x="20" y="12" width="6" height="2" fill="#fef3c7"/>
+              <rect x="36" y="46" width="6" height="2" fill="#f59e0b"/>
+              <!-- sauce layer -->
+              <circle class="sauce" cx="32" cy="32" r="22" fill="#b91c1c"/>
+              <!-- cheese blobs -->
+              <g class="cheese">
+                <rect x="18" y="24" width="6" height="4" fill="#fde68a"/>
+                <rect x="30" y="18" width="8" height="5" fill="#facc15"/>
+                <rect x="40" y="28" width="6" height="5" fill="#fde68a"/>
+                <rect x="22" y="38" width="7" height="4" fill="#facc15"/>
+                <rect x="34" y="40" width="8" height="4" fill="#fde68a"/>
+                <rect x="26" y="30" width="12" height="6" fill="#fef08a"/>
+              </g>
+              <!-- veggie toppings: olives, peppers, mushrooms, broccoli, tomato -->
+              <g class="toppings">
+                <!-- black olives -->
+                <rect x="20" y="26" width="3" height="3" fill="#1f2937"/>
+                <rect x="42" y="36" width="3" height="3" fill="#1f2937"/>
+                <rect x="32" y="44" width="3" height="3" fill="#1f2937"/>
+                <!-- green peppers -->
+                <rect x="28" y="20" width="4" height="2" fill="#16a34a"/>
+                <rect x="40" y="22" width="4" height="2" fill="#16a34a"/>
+                <rect x="24" y="40" width="4" height="2" fill="#16a34a"/>
+                <!-- red peppers -->
+                <rect x="36" y="32" width="3" height="2" fill="#dc2626"/>
+                <rect x="26" y="36" width="3" height="2" fill="#dc2626"/>
+                <!-- mushrooms -->
+                <rect x="22" y="32" width="4" height="2" fill="#d6d3d1"/>
+                <rect x="22" y="34" width="2" height="2" fill="#a8a29e"/>
+                <rect x="44" y="30" width="4" height="2" fill="#d6d3d1"/>
+                <rect x="44" y="32" width="2" height="2" fill="#a8a29e"/>
+                <!-- basil leaves -->
+                <rect x="32" y="28" width="2" height="3" fill="#15803d"/>
+                <rect x="38" y="38" width="2" height="3" fill="#15803d"/>
+              </g>
+            </svg>
           </div>
+
+          <!-- Oven (shows in stage 'oven') -->
           <div class="oven" id="oven">
-            <div class="oven-front"></div>
+            <div class="oven-body">
+              <div class="oven-door">
+                <div class="oven-window">
+                  <div class="ember e1"></div>
+                  <div class="ember e2"></div>
+                  <div class="ember e3"></div>
+                </div>
+                <div class="oven-handle"></div>
+              </div>
+              <div class="oven-dial d1"></div>
+              <div class="oven-dial d2"></div>
+            </div>
             <div class="oven-glow"></div>
           </div>
+
+          <!-- Floating veggies rain when in toppings stage -->
+          <div class="veggie-rain" id="veggieRain"></div>
         </div>
       </div>
 
       <div class="progress-shell">
-        <div class="progress-stage" id="progressStage">Kneading dough</div>
+        <div class="progress-stage pixel" id="progressStage">KNEADING DOUGH</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-message" id="progressMessage">Warming the stone…</div>
       </div>
@@ -123,8 +255,8 @@
 
     <!-- ═══ STAGE 4 — RESULTS ═══════════════════════════════ -->
     <section id="resultStage" class="stage">
-      <div class="ding">🔔 DING! 🔔</div>
-      <h2 class="stage-title">Your pizza is ready.</h2>
+      <div class="ding pixel">🔔 DING! 🔔</div>
+      <h2 class="stage-title">Pizza's ready.</h2>
       <p class="stage-sub" id="resultSub">Reconciliation complete.</p>
 
       <div class="stats" id="statsGrid"></div>
@@ -141,7 +273,7 @@
     </section>
 
     <footer class="footer">
-      <span>🍕 Kosher pizzeria — no meat in this oven.</span>
+      <span>🍕 Kosher vegetarian pizzeria — no meat in this oven.</span>
       <span id="health">·</span>
     </footer>
   </main>

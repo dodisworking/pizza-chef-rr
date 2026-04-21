@@ -1,16 +1,23 @@
 /* ═══════════════════════════════════════════════════════════
-   Todd Jr's Pizzeria — rent roll chef
-   Apple-smooth surface, 8-bit pizza sprite in the middle.
+   Todd Jr's Pizzeria — 32-bit vegetarian kitchen
    ═══════════════════════════════════════════════════════════ */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-  background: linear-gradient(180deg, #fef3e6 0%, #fff7ed 40%, #ffffff 100%);
+  background:
+    radial-gradient(1200px 500px at 50% -200px, #ffedd5 0%, transparent 70%),
+    linear-gradient(180deg, #fef3e6 0%, #fff7ed 40%, #ffffff 100%);
   color: #1f2937;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Pixel headline font */
+.pixel { font-family: "Press Start 2P", system-ui, monospace; letter-spacing: 0.04em; }
+
+/* Shared sprite crispness */
+svg[shape-rendering="crispEdges"] { image-rendering: pixelated; }
 
 .app {
   max-width: 1100px;
@@ -58,7 +65,8 @@ body {
   font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
   margin: 0 0 6px; color: #111827;
 }
-.stage-sub { margin: 0 0 28px; color: #6b7280; font-size: 15px; }
+.stage-title.pixel { font-size: 22px; color: #b91c1c; letter-spacing: 0.05em; }
+.stage-sub { margin: 0 0 28px; color: #6b7280; font-size: 15px; line-height: 1.5; }
 
 /* ─── Drop zones ──────────────────────────────────────── */
 .drop-grid {
@@ -68,24 +76,40 @@ body {
 .drop-slot {
   position: relative;
   background: #fff;
-  border: 2px dashed #fbbf24;
+  border: 3px dashed #fbbf24;
   border-radius: 22px;
-  padding: 44px 20px;
+  padding: 32px 20px 28px;
   text-align: center;
   cursor: pointer;
   transition: all .2s ease;
   box-shadow: 0 4px 14px rgba(251, 191, 36, .12);
 }
-.drop-slot:hover { border-color: #f59e0b; background: #fffbeb; }
-.drop-slot.dragover { border-color: #ea580c; background: #fff7ed; transform: scale(1.01); }
-.drop-slot.filled { border-style: solid; border-color: #10b981; background: #f0fdf4; box-shadow: 0 4px 14px rgba(16, 185, 129, .18); }
-
-.drop-slot input[type=file] {
-  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+.drop-slot.slot-argus { border-color: #65a30d; }
+.drop-slot.slot-client { border-color: #16a34a; }
+.drop-slot:hover  { background: #fffbeb; transform: translateY(-1px); }
+.drop-slot.dragover { background: #fef3c7; transform: scale(1.01); border-style: solid; }
+.drop-slot.filled {
+  border-style: solid; border-color: #10b981; background: #ecfdf5;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, .22);
 }
-.drop-icon { font-size: 42px; margin-bottom: 6px; }
-.drop-label { font-size: 18px; font-weight: 600; color: #111827; }
-.drop-hint { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+.drop-slot.filled .veg-art { animation: veg-bounce .8s ease-out; }
+
+.drop-slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.veg-art {
+  width: 72px; height: 72px; margin: 0 auto 8px;
+  background: #fffbeb; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 -4px 0 rgba(180,83,9,.08);
+}
+.veg-art svg { width: 56px; height: 56px; image-rendering: pixelated; }
+@keyframes veg-bounce {
+  0% { transform: scale(.7); } 60% { transform: scale(1.15); } 100% { transform: scale(1); }
+}
+
+.drop-label { font-size: 18px; font-weight: 700; color: #111827; }
+.drop-label .alias { color: #6b7280; font-weight: 500; font-size: 13px; }
+.drop-hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
 .drop-filename {
   margin-top: 10px; font-size: 13px; font-weight: 500; color: #047857;
   word-break: break-all;
@@ -119,14 +143,14 @@ body {
   border: 2px solid #e5e7eb;
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
-.confirm-card.argus { border-color: #1e3a5f; }
-.confirm-card.client { border-color: #065f46; }
+.confirm-card.argus { border-color: #65a30d; background: #f7fee7; }
+.confirm-card.client { border-color: #16a34a; background: #f0fdf4; }
 .confirm-badge {
   display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
-  padding: 4px 10px; border-radius: 999px; margin-bottom: 12px;
-  background: #1e3a5f; color: #fff;
+  padding: 6px 12px; border-radius: 999px; margin-bottom: 12px; color: #fff;
+  background: #65a30d;
 }
-.confirm-card.client .confirm-badge { background: #065f46; }
+.confirm-card.client .confirm-badge { background: #16a34a; }
 .confirm-filename { font-size: 16px; font-weight: 600; color: #111827; word-break: break-all; margin-bottom: 8px; }
 .confirm-hits { font-size: 12px; color: #6b7280; line-height: 1.6; font-family: ui-monospace, monospace; }
 .swap-btn {
@@ -136,101 +160,231 @@ body {
 }
 .swap-btn:hover { background: #fff7ed; border-color: #ea580c; }
 
-/* ─── Pizza bake stage ────────────────────────────────── */
-.pizza-stage {
-  position: relative; height: 340px;
+/* ═══════════════════════════════════════════════════════
+   32-BIT KITCHEN STAGE
+   ═══════════════════════════════════════════════════════ */
+
+.kitchen {
+  position: relative;
+  height: 380px;
   margin: 8px auto 24px;
-  display: flex; justify-content: center; align-items: flex-end;
-  background: repeating-linear-gradient(45deg, #fde68a 0 8px, #fcd34d 8px 16px);
   border-radius: 22px;
   overflow: hidden;
-  box-shadow: inset 0 2px 10px rgba(180, 83, 9, .25);
+  background:
+    /* back wall tiles */
+    repeating-linear-gradient(0deg, #fde68a 0 32px, #fcd34d 32px 33px, #fde68a 33px 64px, #fcd34d 64px 65px),
+    linear-gradient(180deg, #fde68a 0%, #fcd34d 68%, #78350f 68%, #78350f 100%);
+  box-shadow: inset 0 0 40px rgba(120, 53, 15, .18), 0 4px 14px rgba(180,83,9,.18);
   image-rendering: pixelated;
 }
-.chef {
-  position: absolute; left: 28px; bottom: 28px;
-  font-size: 72px;
-  animation: chef-bob 1.2s ease-in-out infinite;
+.kitchen-bg {
+  position: absolute; inset: 0 0 32% 0;
+  background-image:
+    /* hanging utensil silhouettes */
+    radial-gradient(circle at 8% 20%, #a16207 0 2px, transparent 3px),
+    radial-gradient(circle at 12% 22%, #a16207 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 18%, #a16207 0 2px, transparent 3px),
+    radial-gradient(circle at 92% 20%, #a16207 0 2px, transparent 3px);
 }
+
+/* Wooden counter runs along the bottom 32% */
+.counter {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 32%;
+  background:
+    repeating-linear-gradient(90deg, rgba(120,53,15,.25) 0 2px, transparent 2px 16px),
+    linear-gradient(180deg, #a16207 0%, #7c2d12 100%);
+  border-top: 3px solid #451a03;
+}
+
+/* ─── Chef sprite ─────────────────────────────────────── */
+.chef-sprite {
+  position: absolute; left: 44px; bottom: 72px;
+  width: 96px; height: 120px;
+  z-index: 2;
+  image-rendering: pixelated;
+}
+.chef-sprite svg { width: 100%; height: 100%; }
+
+.chef-sprite .arm.left,
+.chef-sprite .arm.right,
+.chef-sprite .hand.left,
+.chef-sprite .hand.right {
+  transform-box: fill-box;
+  transform-origin: center top;
+  transition: transform .3s ease;
+}
+
+/* Chef idle bob */
+.chef-sprite { animation: chef-bob 1.2s steps(2) infinite; }
 @keyframes chef-bob {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Stage-specific chef arm choreography */
+.kitchen.stage-dough    .chef-sprite .arm.left, .kitchen.stage-dough .chef-sprite .arm.right { animation: knead 0.4s steps(2) infinite; }
+.kitchen.stage-roll     .chef-sprite { animation: chef-bob 0.3s steps(2) infinite; }
+.kitchen.stage-sauce    .chef-sprite .arm.right { animation: stir 0.6s steps(3) infinite; }
+.kitchen.stage-toppings .chef-sprite .arm.left, .kitchen.stage-toppings .chef-sprite .arm.right { animation: sprinkle 0.3s steps(2) infinite; }
+.kitchen.stage-oven     .chef-sprite { opacity: 0.5; filter: saturate(0.7); }
+.kitchen.stage-ding     .chef-sprite { animation: cheer 0.5s ease-in-out infinite; }
+
+@keyframes knead    { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px) rotate(-10deg); } }
+@keyframes stir     { 0% { transform: rotate(-6deg); } 100% { transform: rotate(6deg); } }
+@keyframes sprinkle { 0% { transform: rotate(-15deg) translateY(0); } 100% { transform: rotate(15deg) translateY(-2px); } }
+@keyframes cheer    { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+
+/* ─── Pizza wrap ──────────────────────────────────────── */
+.pizza-wrap {
+  position: absolute;
+  right: 120px; bottom: 56px;
+  width: 200px; height: 200px;
+  z-index: 2;
 }
 
 .pizza {
-  position: relative; width: 220px; height: 220px;
-  margin-right: 48px; margin-bottom: 40px;
+  position: absolute; inset: 0;
+  transform-origin: center;
+  transition: transform .5s cubic-bezier(.2,.8,.2,1), opacity .4s ease;
 }
-.layer {
-  position: absolute; inset: 0; border-radius: 50%;
-  opacity: 0; transform: scale(.6);
-  transition: all .6s cubic-bezier(.2,.8,.2,1);
-}
-.layer.base    { background: radial-gradient(circle at 50% 45%, #fde68a 40%, #d97706 90%); box-shadow: inset 0 -6px 12px rgba(124, 45, 18, .4); }
-.layer.sauce   { background: radial-gradient(circle, #b91c1c 0%, #991b1b 70%, transparent 72%); inset: 12px; }
-.layer.cheese  { background: radial-gradient(ellipse at 30% 40%, #fef9c3 0%, #facc15 60%, transparent 62%); inset: 16px; mix-blend-mode: screen; }
-.layer.toppings {
-  inset: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 14px; font-size: 24px; font-weight: 900; color: #111827;
-}
-.layer.toppings .veg { display: inline-block; }
-.layer.toppings .olive   { color: #111827; }
-.layer.toppings .pepper  { color: #047857; }
-.layer.toppings .mushroom{ color: #92400e; }
+.pizza-svg { width: 100%; height: 100%; image-rendering: pixelated; }
 
-.pizza.stage-dough    .layer.base    { opacity: 1; transform: scale(1); animation: dough-knead 1.2s ease-in-out infinite; }
-.pizza.stage-roll     .layer.base    { opacity: 1; transform: scale(1); animation: dough-spin 2s linear infinite; }
-.pizza.stage-sauce    .layer.base    { opacity: 1; transform: scale(1); }
-.pizza.stage-sauce    .layer.sauce   { opacity: 1; transform: scale(1); }
-.pizza.stage-toppings .layer.base, .pizza.stage-toppings .layer.sauce { opacity: 1; transform: scale(1); }
-.pizza.stage-toppings .layer.cheese  { opacity: 1; transform: scale(1); }
-.pizza.stage-toppings .layer.toppings{ opacity: 1; transform: scale(1); }
-.pizza.stage-oven     .layer          { opacity: 1; transform: scale(1); }
-.pizza.stage-oven                     { animation: oven-rock 1.4s ease-in-out infinite; }
-.pizza.stage-ding     .layer          { opacity: 1; transform: scale(1); animation: pizza-pop .6s ease-out; }
+/* Pizza stage visibility of layers */
+.pizza .sauce    { opacity: 0; transition: opacity .5s ease; }
+.pizza .cheese   { opacity: 0; transition: opacity .5s ease; }
+.pizza .toppings { opacity: 0; transition: opacity .5s ease; }
 
-@keyframes dough-knead { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04) rotate(-1.5deg); } }
-@keyframes dough-spin  { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-@keyframes oven-rock   { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(2deg); } }
-@keyframes pizza-pop   { 0% { transform: scale(.6); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.kitchen.stage-dough  .pizza            { transform: scale(.7); }
+.kitchen.stage-dough  .pizza            { animation: dough-knead 0.6s steps(2) infinite; }
+.kitchen.stage-roll   .pizza            { transform: scale(1); animation: dough-spin 1.6s linear infinite; }
+.kitchen.stage-sauce  .pizza            { transform: scale(1); }
+.kitchen.stage-sauce  .pizza .sauce     { opacity: 1; animation: sauce-pour .6s ease-out; }
+.kitchen.stage-toppings .pizza .sauce, .kitchen.stage-toppings .pizza .cheese, .kitchen.stage-toppings .pizza .toppings { opacity: 1; }
+.kitchen.stage-toppings .pizza .toppings{ animation: topping-pop .4s ease-out; }
+.kitchen.stage-oven   .pizza            { opacity: 0; transform: translateX(80px) scale(.9); }
+.kitchen.stage-ding   .pizza            { opacity: 1; transform: scale(1.08); animation: pizza-ready .6s ease-out; }
+.kitchen.stage-ding   .pizza .sauce,
+.kitchen.stage-ding   .pizza .cheese,
+.kitchen.stage-ding   .pizza .toppings { opacity: 1; }
 
+@keyframes dough-knead { 0%,100% { transform: scale(.68); } 50% { transform: scale(.74) rotate(-3deg); } }
+@keyframes dough-spin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes sauce-pour  { 0% { transform: scale(.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes topping-pop { 0% { transform: scale(.6); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes pizza-ready { 0% { transform: scale(.8); } 60% { transform: scale(1.18); } 100% { transform: scale(1.08); } }
+
+/* ─── Oven ────────────────────────────────────────────── */
 .oven {
-  position: absolute; inset: -20px; border-radius: 50%;
-  pointer-events: none; opacity: 0; transition: opacity .4s ease;
+  position: absolute; inset: 0;
+  opacity: 0; transform: scale(.85);
+  transition: opacity .4s ease, transform .4s ease;
 }
-.pizza.stage-oven .oven { opacity: 1; }
+.kitchen.stage-oven .oven { opacity: 1; transform: scale(1); }
+
+.oven-body {
+  position: absolute; inset: 10% 5% 5% 5%;
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border: 4px solid #000;
+  border-radius: 10px;
+  box-shadow: 0 6px 0 #000, inset 0 -4px 0 rgba(0,0,0,.4);
+}
+.oven-door {
+  position: absolute; inset: 18% 8% 12% 8%;
+  background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
+  border: 3px solid #000;
+  border-radius: 6px;
+}
+.oven-window {
+  position: absolute; inset: 10% 12% 28% 12%;
+  background: linear-gradient(180deg, #7f1d1d 0%, #f97316 50%, #fbbf24 100%);
+  border: 3px solid #000;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(253, 186, 116, .8);
+  animation: oven-burn 1.2s ease-in-out infinite;
+}
+@keyframes oven-burn {
+  0%, 100% { box-shadow: inset 0 0 18px rgba(253, 186, 116, .6); filter: brightness(1); }
+  50%      { box-shadow: inset 0 0 34px rgba(253, 186, 116, 1); filter: brightness(1.15); }
+}
+.ember {
+  position: absolute; bottom: 10%;
+  width: 4px; height: 4px; background: #fed7aa; border-radius: 50%;
+  opacity: 0;
+  animation: ember-fly 1.4s ease-out infinite;
+}
+.ember.e1 { left: 20%; animation-delay: 0s; }
+.ember.e2 { left: 50%; animation-delay: 0.5s; }
+.ember.e3 { left: 80%; animation-delay: 1s; }
+@keyframes ember-fly {
+  0%   { bottom: 10%; opacity: 1;  transform: scale(1); }
+  70%  { bottom: 80%; opacity: .8; transform: scale(.6); }
+  100% { bottom: 95%; opacity: 0;  transform: scale(.3); }
+}
+.oven-handle {
+  position: absolute; left: 20%; right: 20%; top: 78%;
+  height: 6px; background: #9ca3af; border: 2px solid #000; border-radius: 3px;
+}
+.oven-dial {
+  position: absolute; width: 10px; height: 10px; background: #fbbf24;
+  border: 2px solid #000; border-radius: 50%; top: 6%;
+}
+.oven-dial.d1 { left: 14%; }
+.oven-dial.d2 { right: 14%; }
+
 .oven-glow {
-  position: absolute; inset: 0; border-radius: 50%;
-  box-shadow: 0 0 80px 40px rgba(249, 115, 22, .55), inset 0 0 40px rgba(239, 68, 68, .4);
-  animation: oven-glow 1.4s ease-in-out infinite;
+  position: absolute; inset: 0;
+  pointer-events: none;
+  border-radius: 12px;
+  box-shadow: 0 0 60px 30px rgba(249, 115, 22, .45);
+  opacity: 0;
+  transition: opacity .4s ease;
 }
-@keyframes oven-glow {
-  0%,100% { box-shadow: 0 0 60px 30px rgba(249, 115, 22, .4), inset 0 0 30px rgba(239, 68, 68, .4); }
-  50%     { box-shadow: 0 0 90px 50px rgba(249, 115, 22, .7), inset 0 0 50px rgba(239, 68, 68, .6); }
+.kitchen.stage-oven .oven-glow { opacity: 1; animation: glow-pulse 1.2s ease-in-out infinite; }
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 60px 28px rgba(249, 115, 22, .45); }
+  50%      { box-shadow: 0 0 90px 50px rgba(249, 115, 22, .75); }
+}
+
+/* ─── Veggie rain (when adding toppings) ──────────────── */
+.veggie-rain {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.veggie-rain .v {
+  position: absolute;
+  font-size: 18px;
+  animation: veg-drop .9s ease-in forwards;
+}
+@keyframes veg-drop {
+  0%   { transform: translateY(-60px) rotate(0deg); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
 }
 
 /* ─── Progress ────────────────────────────────────────── */
 .progress-shell { max-width: 680px; margin: 0 auto; }
 .progress-stage {
-  font-size: 15px; font-weight: 600; color: #111827;
+  font-size: 14px; font-weight: 700; color: #b91c1c;
   margin-bottom: 8px; text-align: center;
 }
 .progress-bar {
-  height: 12px; background: #fff7ed; border-radius: 999px; overflow: hidden;
-  border: 1px solid #fed7aa; box-shadow: inset 0 1px 2px rgba(0,0,0,.04);
+  height: 14px; background: #fff7ed; border-radius: 999px; overflow: hidden;
+  border: 2px solid #78350f; box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
+  image-rendering: pixelated;
 }
 .progress-fill {
   height: 100%; width: 0;
-  background: linear-gradient(90deg, #fbbf24, #f97316, #ea580c);
+  background:
+    repeating-linear-gradient(90deg, #fbbf24 0 6px, #f97316 6px 12px);
   border-radius: 999px;
   transition: width .4s ease;
-  box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
 }
 .progress-message { text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; }
 
 /* ─── Results ─────────────────────────────────────────── */
 .ding {
-  text-align: center; font-size: 32px; letter-spacing: .25em;
+  text-align: center; font-size: 26px; letter-spacing: .25em;
   font-weight: 800; color: #b91c1c;
   animation: ding-wiggle .8s ease-out;
 }
@@ -281,4 +435,6 @@ body {
 @media (max-width: 680px) {
   .drop-grid, .confirm-grid { grid-template-columns: 1fr; }
   .swap-btn { justify-self: center; }
+  .chef-sprite { left: 16px; bottom: 60px; width: 72px; height: 90px; }
+  .pizza-wrap { right: 24px; bottom: 48px; width: 150px; height: 150px; }
 }

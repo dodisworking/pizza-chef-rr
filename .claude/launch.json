@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pizza-chef",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3789,
+      "env": {
+        "PORT": "3789"
+      }
+    }
+  ]
+}

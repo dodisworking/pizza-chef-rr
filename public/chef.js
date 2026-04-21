@@ -164,18 +164,45 @@ const STAGE_MAP = {
   ding:  { pizza: 'ding',     label: 'DING!' },
 }
 
-function updateProgress({ stage, percent, message }) {
-  const m = STAGE_MAP[stage] || STAGE_MAP.dough
-  $('#progressStage').textContent = m.label
-  $('#progressMessage').textContent = message || ''
-  $('#progressFill').style.width = Math.min(100, Math.max(0, percent || 0)) + '%'
-  $('#bakingHeadline').textContent = m.label + '…'
-  setPizzaStage(m.pizza)
+const STAGE_LABELS = {
+  dough:    'KNEADING DOUGH',
+  roll:     'TOSSING DOUGH',
+  sauce:    'SPREADING SAUCE',
+  toppings: 'SPRINKLING VEGGIES',
+  oven:     'BAKING IN THE OVEN',
+  ding:     'DING!',
 }
 
-function setPizzaStage(stage) {
-  const p = $('#pizzaSprite')
-  p.className = 'pizza stage-' + stage
+function updateProgress({ stage, percent, message }) {
+  const m = STAGE_MAP[stage] || STAGE_MAP.dough
+  const label = STAGE_LABELS[m.pizza] || m.label.toUpperCase()
+  $('#progressStage').textContent = label
+  $('#progressMessage').textContent = message || ''
+  $('#progressFill').style.width = Math.min(100, Math.max(0, percent || 0)) + '%'
+  $('#bakingHeadline').textContent = label + '…'
+  setKitchenStage(m.pizza)
+}
+
+function setKitchenStage(stage) {
+  const k = document.getElementById('kitchen')
+  if (!k) return
+  k.className = 'kitchen stage-' + stage
+  if (stage === 'toppings') rainVeggies()
+}
+
+const VEG_EMOJI = ['🫑','🥦','🫒','🧅','🍅','🌶️','🥬','🌿']
+function rainVeggies() {
+  const host = document.getElementById('veggieRain')
+  if (!host) return
+  host.innerHTML = ''
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span')
+    s.className = 'v'
+    s.textContent = VEG_EMOJI[Math.floor(Math.random() * VEG_EMOJI.length)]
+    s.style.left = (10 + Math.random() * 80) + '%'
+    s.style.animationDelay = (Math.random() * 0.6) + 's'
+    host.appendChild(s)
+  }
 }
 
 function onComplete(payload) {
