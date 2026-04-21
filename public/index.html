@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Todd's Pizzeria — Rent Roll the Dough</title>
   <link rel="stylesheet" href="/chef.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      }
+    })
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -346,6 +355,22 @@
             <button class="drawer-close" id="drawerClose" aria-label="Close">✕</button>
           </div>
           <div class="drawer-body" id="drawerBody"></div>
+          <div class="drawer-preview" id="drawerPreview">
+            <div class="preview-toolbar">
+              <div class="preview-title">Source documents <small>(red box marks what Todd matched)</small></div>
+              <button id="togglePreview" class="btn ghost">📄 Show sources</button>
+            </div>
+            <div class="preview-grid" id="previewGrid" hidden>
+              <div class="preview-side preview-apple">
+                <div class="preview-side-label">🍎 Apple · Argus</div>
+                <div class="preview-canvas-wrap" id="previewArgus"></div>
+              </div>
+              <div class="preview-side preview-pear">
+                <div class="preview-side-label">🍐 Pear · Client</div>
+                <div class="preview-canvas-wrap" id="previewClient"></div>
+              </div>
+            </div>
+          </div>
           <div class="drawer-foot">
             <div class="review-buttons">
               <button class="btn-review good"    data-verdict="good">👍 Real discrepancy</button>

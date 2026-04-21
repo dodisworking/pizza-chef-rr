@@ -373,6 +373,171 @@ function renderA2APanel(groups) {
   host.innerHTML = rows || '<div style="padding:14px;color:#9ca3af;font-size:12px">(no rows for this filter)</div>'
 }
 
+// ═══ SOURCE PREVIEW (PDF render + red rectangle overlay) ════
+// Uses pdf.js loaded via CDN. Caches one pdf.js document per file.
+const pdfCache = new Map()     // key: 'argus' | 'client' → { pdfDoc, tenantIndex: Map<suiteNorm, {page, rect}> }
+
+async function loadPdfDoc(side) {
+  if (pdfCache.has(side)) return pdfCache.get(side)
+  const file = side === 'argus' ? state.argusFile : state.clientFile
+  if (!file) return null
+  if (!/\.pdf$/i.test(file.name)) {
+    pdfCache.set(side, { type: 'xlsx', file })
+    return pdfCache.get(side)
+  }
+  if (typeof pdfjsLib === 'undefined') return null
+  const buf = await file.arrayBuffer()
+  const pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise
+  const entry = { type: 'pdf', pdfDoc, tenantIndex: new Map() }
+  pdfCache.set(side, entry)
+  return entry
+}
+
+// Scan every page once, build suite → (page, bbox) index.
+// The bbox is the union of every text run matching the suite number or tenant name.
+async function buildTenantIndex(entry, tenants) {
+  if (entry.type !== 'pdf' || entry.tenantIndex.size) return
+  const pdfDoc = entry.pdfDoc
+  for (let p = 1; p <= pdfDoc.numPages; p++) {
+    const page = await pdfDoc.getPage(p)
+    const viewport = page.getViewport({ scale: 1.0 })
+    const tc = await page.getTextContent()
+    for (const t of tenants) {
+      const suiteKey = t.suiteNormalized || t.suite
+      if (!suiteKey) continue
+      const suiteRe = new RegExp(`(^|\\s|#)0*${escapeRegex(String(t.suite || '').replace(/^0+/, '').replace(/[^a-z0-9]/gi, ''))}\\b`, 'i')
+      const nameToken = t.name ? t.name.split(/[\s,]/).filter(w => w.length > 3)[0] : null
+      const nameRe = nameToken ? new RegExp(escapeRegex(nameToken), 'i') : null
+
+      const hits = []
+      for (const item of tc.items) {
+        const str = item.str
+        const hit = (suiteRe.test(str) || (nameRe && nameRe.test(str)))
+        if (!hit) continue
+        // Item transform: [a, b, c, d, x, y] where (x,y) is PDF point origin (bottom-left of the item baseline).
+        const tr = pdfjsLib.Util.transform(viewport.transform, item.transform)
+        const x = tr[4]
+        const y = tr[5] - item.height  // pdf.js y is baseline; subtract height to get top
+        const w = item.width
+        const h = item.height
+        hits.push({ x, y, w, h })
+      }
+      if (!hits.length) continue
+      const existing = entry.tenantIndex.get(suiteKey)
+      if (existing) continue  // first-page hit wins
+      const bbox = unionBoxes(hits)
+      // Pad a bit
+      bbox.x -= 6; bbox.y -= 4; bbox.w += 12; bbox.h += 8
+      entry.tenantIndex.set(suiteKey, { page: p, rect: bbox, viewportScale: 1 })
+    }
+  }
+}
+
+function unionBoxes(boxes) {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity
+  for (const b of boxes) {
+    x1 = Math.min(x1, b.x)
+    y1 = Math.min(y1, b.y)
+    x2 = Math.max(x2, b.x + b.w)
+    y2 = Math.max(y2, b.y + b.h)
+  }
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 }
+}
+
+function escapeRegex(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+async function renderSourcePreviews(g) {
+  await Promise.all([
+    renderOneSide('argus', $('#previewArgus'), g, state.result.argus),
+    renderOneSide('client', $('#previewClient'), g, state.result.client),
+  ])
+}
+
+async function renderOneSide(side, host, group, tenants) {
+  host.innerHTML = '<div class="preview-placeholder">Loading…</div>'
+  const suiteKey = group.suiteNormalized || group.suite
+  const tenant = side === 'argus' ? group.argus : group.client
+
+  // If this side doesn't have the tenant at all, show a note
+  if (!tenant && ((side === 'argus' && group.clientOnly) || (side === 'client' && group.argusOnly))) {
+    host.innerHTML = '<div class="preview-placeholder">Not present in this rent roll.</div>'
+    return
+  }
+
+  let entry
+  try { entry = await loadPdfDoc(side) } catch (e) { entry = null }
+  if (!entry) {
+    host.innerHTML = '<div class="preview-placeholder">Source file no longer loaded. Re-upload to see the visual preview.</div>'
+    return
+  }
+
+  if (entry.type === 'xlsx') {
+    renderXlsxRow(host, tenant)
+    return
+  }
+
+  // PDF — build index lazily
+  try { await buildTenantIndex(entry, tenants || []) } catch (e) { console.warn('index failed', e) }
+  const loc = entry.tenantIndex.get(suiteKey)
+  if (!loc) {
+    host.innerHTML = `<div class="preview-placeholder">Couldn't find Suite ${escape(group.suite || '')} in the PDF (might be a scanned image or atypical layout).</div>`
+    return
+  }
+
+  // Render that page
+  const page = await entry.pdfDoc.getPage(loc.page)
+  const scale = 1.3
+  const viewport = page.getViewport({ scale })
+  const canvas = document.createElement('canvas')
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+
+  host.innerHTML = ''
+  host.style.position = 'relative'
+  host.appendChild(canvas)
+
+  // Overlay red rectangle. loc.rect was computed at scale=1; rescale now.
+  const rect = document.createElement('div')
+  rect.className = 'hl-rect'
+  const canvasOffset = canvas.getBoundingClientRect()
+  const hostOffset = host.getBoundingClientRect()
+  const offsetX = canvas.offsetLeft
+  const offsetY = canvas.offsetTop
+  rect.style.left = (offsetX + loc.rect.x * scale) + 'px'
+  rect.style.top  = (offsetY + loc.rect.y * scale) + 'px'
+  rect.style.width  = (loc.rect.w * scale) + 'px'
+  rect.style.height = (loc.rect.h * scale) + 'px'
+  host.appendChild(rect)
+
+  // Scroll the rectangle into view inside the preview-canvas-wrap
+  host.scrollTop = Math.max(0, (offsetY + loc.rect.y * scale) - 40)
+}
+
+function renderXlsxRow(host, tenant) {
+  if (!tenant) {
+    host.innerHTML = '<div class="preview-placeholder">Not present in this rent roll.</div>'
+    return
+  }
+  const rows = [
+    ['Suite', tenant.suite],
+    ['Tenant', tenant.name],
+    ['SF', tenant.sqft != null ? Number(tenant.sqft).toLocaleString() : '—'],
+    ['Lease Start', tenant.leaseStart],
+    ['Lease End', tenant.leaseEnd],
+    ['Annual Rent', tenant.annualRent != null ? '$' + Number(tenant.annualRent).toLocaleString() : '—'],
+    ['Monthly Rent', tenant.monthlyRent != null ? '$' + Number(tenant.monthlyRent).toLocaleString() : '—'],
+    ['$/SF Annual', tenant.psfAnnual != null ? '$' + tenant.psfAnnual.toFixed(2) : '—'],
+  ]
+  host.innerHTML = `
+    <div class="preview-xlsx-row">
+      <table>
+        ${rows.map(([k,v]) => `<tr class="highlighted"><th>${escape(k)}</th><td>${escape(v ?? '—')}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div class="preview-placeholder" style="margin:0">XLSX source — row data shown in place of page render.</div>`
+}
+
 function wireReviewer() {
   // Filter chips
   document.querySelectorAll('#filterChips .chip').forEach(c => {
@@ -404,6 +569,14 @@ function wireReviewer() {
     const groups = state.result.tenantGroups || []
     const idx = groups.findIndex(g => (g.suiteNormalized || g.suite) === suite)
     if (idx >= 0) openDrawer(idx)
+  }
+
+  // Source preview toggle
+  $('#togglePreview').onclick = () => {
+    const grid = $('#previewGrid')
+    const shown = !grid.hidden
+    if (shown) { grid.hidden = true; $('#togglePreview').textContent = '📄 Show sources' }
+    else       { grid.hidden = false; $('#togglePreview').textContent = '🫣 Hide sources' }
   }
 
   // Drawer controls
@@ -440,7 +613,6 @@ function openDrawer(idx) {
 
   // Highlight panels
   highlightPanels(g.suiteNormalized || g.suite)
-  // Mark selected in a2a panel
   document.querySelectorAll('.a2a-row').forEach(r => r.classList.toggle('selected', parseInt(r.dataset.idx,10) === idx))
 
   $('#drawerTitle').innerHTML = `Suite <b>${escape(g.suite || '—')}</b> · ${escape(g.argus?.name || g.client?.name || '—')}`
@@ -453,6 +625,13 @@ function openDrawer(idx) {
   $('#reviewNote').value = review.note || ''
 
   $('#reviewDrawer').setAttribute('aria-hidden', 'false')
+
+  // Reset source preview (hidden until user clicks toggle)
+  $('#previewGrid').hidden = true
+  $('#togglePreview').textContent = '📄 Show sources'
+
+  // Pre-render sources in background so they're ready on click
+  requestAnimationFrame(() => renderSourcePreviews(g))
 }
 
 function closeDrawer() {
